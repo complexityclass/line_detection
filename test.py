@@ -27,11 +27,22 @@ def blankImage(height, width, color):
 	return dump_image
 
 
-def lsdWithParams(img):
+def lsdDefault(img):
 	LSD = cv2.createLineSegmentDetector(0)
 	lines, width, prec, nfa = LSD.detect(img)
 
 	return lines, width, prec, nfa
+
+
+def lsdWithParams(img, refine, scale, sigma_scale, quant, ang_th, log_eps, density_th, n_bins):
+	LSD = cv2.createLineSegmentDetector(_refine = refine, _scale = scale, 
+		_sigma_scale = sigma_scale, _quant = quant, _ang_th = ang_th, 
+		_log_eps = log_eps, _density_th = density_th, _n_bins = n_bins)
+
+	lines, width, prec, nfa = LSD.detect(img)
+
+	return lines, width, prec, nfa
+
 
 
 def layoutToDump(dumpMatr, lines):
@@ -73,19 +84,36 @@ def printImageLinesWithTreshold(dump, treshold):
 	cv2.destroyAllWindows()
 
 
+
 def test():
 
 	imC, imG = originalImageToGrayscale("credit.png")
 	height, width = imG.shape
 	dumpMatrix = np.zeros(shape = (height, width))
-	lines, width, prec, nfa = lsdWithParams(imG)
+	#lines, width, prec, nfa = lsdDefault(imG)
+	lines, width, prec, nfa = lsdWithParams(imG, cv2.LSD_REFINE_ADV, 0.7, 0.6, 2.0, 22.5, 0, 0.6, 1024)
 	dumpMatrix = layoutToDump(dumpMatrix, lines)
-	printMatr(dumpMatrix)
 
 	printImageLinesWithTreshold(dumpMatrix, 1)
 
 
-test()
+def completeTest(imageName):
+	imColor, imgGrayScale = originalImageToGrayscale(imageName)
+	height, width = imgGrayScale.shape
+	dumpMatrix = np.zeros(shape = (height, width))
+	
+	lines1, width1, prec1, nfa1 = lsdWithParams(imgGrayScale, cv2.LSD_REFINE_ADV, 0.7, 0.6, 2.0, 22.5, 0, 0.6, 1024)
+	lines2, width2, prec2, nfa2 = lsdDefault(imgGrayScale)
+
+	dumpMatrix = layoutToDump(dumpMatrix, lines1)
+	dumpMatrix = layoutToDump(dumpMatrix, lines2)
+
+	printMatr(dumpMatrix)
+
+
+
+#test()
+completeTest("credit.png")
 
 '''
 imgColor = cv2.imread("card.png")
