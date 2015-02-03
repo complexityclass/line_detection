@@ -159,11 +159,8 @@ def test():
 	#matr = np.zeros(shape = (10, 10))
 	#printMatrToFile("test.txt", matr)
 
-	matr = getMatrFromTextFile("card.txt",256, 256)
-	printImageLinesWithTreshold(matr, 1)
-
-
-
+	matr = getMatrFromTextFile("tests/IMG_2156_1936_1080.txt",1936, 2000)
+	printImageLinesWithTreshold(matr, 5)
 
 
 def completeTest(imageName, filename):
@@ -172,21 +169,25 @@ def completeTest(imageName, filename):
 	dumpMatrix = np.zeros(shape = (height, width))
 
 	#params = refine, scale, sigma_scale, quant, ang_th, log_eps, density_th, n_bins
-
-	for scale in np.arange(0.5, 1, 0.1):
-		for sigma_scale in np.arange(0.5, 0.7, 0.1):
+	counter = 0
+	for scale in np.arange(0.6, 0.8, 0.1):
+		for sigma_scale in np.arange(0.6, 0.7, 0.1):
 			for quant in np.arange(1.0, 2.0, 1.0):
-				for ang_th in np.arange(22, 25, 1.0):
-					for density_th in np.arange(0.5, 0.9, 0.1):
+				for ang_th in np.arange(22, 24, 1.0):
+					for density_th in np.arange(0.5
+						, 0.7, 0.1):
 						lines, width, prec, nfa = lsdWithParams(imgGrayScale, cv2.LSD_REFINE_ADV, scale, sigma_scale, quant, 
 							ang_th, 0, density_th, 1024)
 						dumpMatrix = layoutToDump(dumpMatrix, lines)
+						counter = counter + 1
+						print("test = {}", counter)
 
+	filename = filename + "_{}_{}_.txt".format(height,width)
 	printMatrToFile(filename, dumpMatrix)
 
 
-test()
-#completeTest("card.png", "card.txt")
+#test()
+completeTest("tests/IMG_0055.JPG", "tests/IMG_0055")
 
 
 
