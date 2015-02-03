@@ -1,6 +1,93 @@
 import cv2
 import numpy as np
 
+def originalImageToGrayscale(name):
+	imgColor = cv2.imread(name)
+	imgGrayScale = cv2.imread(name, cv2.IMREAD_GRAYSCALE)
+
+	return imgColor, imgGrayScale
+
+
+def imageToIntencityMatr(img):
+	height, width, channel = img.shape
+
+	intensityMatr = np.zeros(shape = (height, width))
+
+	for i in range(0, height):
+		for j in range(0, width):
+			intensityMatr[i, j] = (int(img[i,j][0]) + int(img[i,j][0]) + int(img[i,j][0])) // 3
+
+	return intensityMatr
+
+
+def blankImage(height, width, color):
+	dump_image = np.zeros((height, width, 3), np.uint8)
+	dump_image[:] = color
+
+	return dump_image
+
+
+def lsdWithParams(img):
+	LSD = cv2.createLineSegmentDetector(0)
+	lines, width, prec, nfa = LSD.detect(img)
+
+	return lines, width, prec, nfa
+
+
+def layoutToDump(dumpMatr, lines):
+	height, width = dumpMatr.shape
+	blank = blankImage(height, width, (0,0,0))
+	LSD = cv2.createLineSegmentDetector(0)
+	layout = LSD.drawSegments(blank, lines)
+
+	for i in range(0, height):
+		for j in range(0, width):
+			if layout[i][j][2] != 0 or layout[i][j][1] != 0 or layout[i][j][0] != 0:
+				dumpMatr[i,j] = dumpMatr[i,j] + 1
+
+	return dumpMatr
+
+
+def printMatr(matr):
+	height, width = matr.shape
+	for i in range(0, height):
+		raw = ""
+		for j in range(0, width):
+			raw = raw + " " + str(matr[i,j])
+		print(raw)
+
+
+def printImageLinesWithTreshold(dump, treshold):
+	height, width = dump.shape
+	blank = blankImage(height, width, (255,255,255))
+
+	for i in range(0, height):
+		for j in range(0, width):
+			if dump[i,j] >= treshold:
+				blank[i,j][0] = 0
+				blank[i,j][1] = 0
+
+	cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+	cv2.imshow('image',blank)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+
+def test():
+
+	imC, imG = originalImageToGrayscale("credit.png")
+	height, width = imG.shape
+	dumpMatrix = np.zeros(shape = (height, width))
+	lines, width, prec, nfa = lsdWithParams(imG)
+	dumpMatrix = layoutToDump(dumpMatrix, lines)
+	printMatr(dumpMatrix)
+
+	printImageLinesWithTreshold(dumpMatrix, 1)
+
+
+test()
+
+'''
 imgColor = cv2.imread("card.png")
 img = cv2.imread("card.png", cv2.IMREAD_GRAYSCALE)
 height, width = img.shape
@@ -28,7 +115,7 @@ LSD = cv2.createLineSegmentDetector(0)
 lines, width, prec, nfa = LSD.detect(img)
 img2 = LSD.drawSegments(imgColor, lines)
 
-LSD2 = cv2.createLineSegmentDetector([])
+LSD2 = cv2.createLineSegmentDetector(0)
 lines2, width2, prec2, nfa2 = LSD.detect(img)
 img3 = LSD.drawSegments(imgColor, lines2)
 
@@ -61,4 +148,5 @@ cv2.namedWindow('image', cv2.WINDOW_NORMAL)
 cv2.imshow('image',img2)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+'''
 
