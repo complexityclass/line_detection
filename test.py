@@ -68,6 +68,21 @@ def printMatr(matr):
 		print(raw)
 
 
+def printMatrToFile(filename, matr):
+	height, width = matr.shape
+
+	with open(filename, "wt") as outfile:
+		outfile.write("HEAD\n")
+		for i in range(0, height):
+			raw = ""
+			for j in range(0, width):
+				raw = raw + " " + str(matr[i,j])
+
+			outfile.write(raw + "\n")
+		outfile.write("END")
+
+
+
 def printImageLinesWithTreshold(dump, treshold):
 	height, width = dump.shape
 	blank = blankImage(height, width, (255,255,255))
@@ -84,97 +99,94 @@ def printImageLinesWithTreshold(dump, treshold):
 	cv2.destroyAllWindows()
 
 
+def getAvailableTresholds(dump):
+	height, width = dump.shape
+	tresholds = []
+	for i in range(0, height):
+		for j in range(0, width):
+			if dump[i,j] != 0 and not(dump[i,j] in tresholds):
+				tresholds.append(dump[i,j])
+
+	return tresholds
+
+
+def getMatrFromTextFile(filename, height, width):
+	matr = np.zeros(shape = (height, width))
+	l = []
+	with open(filename, 'r') as f:
+		for line in f:
+			if 'HEAD' in line:
+				continue
+			if 'END' in line:
+				break
+			line = line.strip()
+			if len(line) > 0:
+				lin = line.split(' ')
+				l.append(lin)
+	
+	for i in range(0, height):
+		for j in range(0, width):
+			matr[i,j] = int(float(l[i][j]))
+
+	return matr
+
+
+def tokenizer(filename):
+	with open(filename) as f:
+		chunk = []
+		for line in f:
+			if 'HEAD' in line:
+				continue
+			if 'END' in line:
+				yield chunk
+				chunk = []
+				continue
+			chunk.append(line)
+
+
 
 def test():
 
+	'''
 	imC, imG = originalImageToGrayscale("credit.png")
 	height, width = imG.shape
 	dumpMatrix = np.zeros(shape = (height, width))
 	#lines, width, prec, nfa = lsdDefault(imG)
 	lines, width, prec, nfa = lsdWithParams(imG, cv2.LSD_REFINE_ADV, 0.7, 0.6, 2.0, 22.5, 0, 0.6, 1024)
 	dumpMatrix = layoutToDump(dumpMatrix, lines)
-
 	printImageLinesWithTreshold(dumpMatrix, 1)
+	'''
+	#matr = np.zeros(shape = (10, 10))
+	#printMatrToFile("test.txt", matr)
+
+	matr = getMatrFromTextFile("card.txt",256, 256)
+	printImageLinesWithTreshold(matr, 1)
 
 
-def completeTest(imageName):
+
+
+
+def completeTest(imageName, filename):
 	imColor, imgGrayScale = originalImageToGrayscale(imageName)
 	height, width = imgGrayScale.shape
 	dumpMatrix = np.zeros(shape = (height, width))
-	
-	lines1, width1, prec1, nfa1 = lsdWithParams(imgGrayScale, cv2.LSD_REFINE_ADV, 0.7, 0.6, 2.0, 22.5, 0, 0.6, 1024)
-	lines2, width2, prec2, nfa2 = lsdDefault(imgGrayScale)
 
-	dumpMatrix = layoutToDump(dumpMatrix, lines1)
-	dumpMatrix = layoutToDump(dumpMatrix, lines2)
+	#params = refine, scale, sigma_scale, quant, ang_th, log_eps, density_th, n_bins
 
-	printMatr(dumpMatrix)
+	for scale in np.arange(0.5, 1, 0.1):
+		for sigma_scale in np.arange(0.5, 0.7, 0.1):
+			for quant in np.arange(1.0, 2.0, 1.0):
+				for ang_th in np.arange(22, 25, 1.0):
+					for density_th in np.arange(0.5, 0.9, 0.1):
+						lines, width, prec, nfa = lsdWithParams(imgGrayScale, cv2.LSD_REFINE_ADV, scale, sigma_scale, quant, 
+							ang_th, 0, density_th, 1024)
+						dumpMatrix = layoutToDump(dumpMatrix, lines)
 
-
-
-#test()
-completeTest("credit.png")
-
-'''
-imgColor = cv2.imread("card.png")
-img = cv2.imread("card.png", cv2.IMREAD_GRAYSCALE)
-height, width = img.shape
-print(img.shape)
-
-for i in range(0, height):
-	st = ""
-	for j in range(0, width):
-		tmp = (int(imgColor[i,j][0]) + int(imgColor[i,j][0]) + int(imgColor[i,j][0])) // 3
-		if tmp is not 1:
-			imgColor.itemset((i,j,0),255)
-			imgColor.itemset((i,j,1),255)
-			imgColor.itemset((i,j,2),255)
-		st = st + " " + str(tmp)
-	#print(st)
-
-from cv2 import __version__
-print(__version__)
-
-dump_image = np.zeros((height, width, 3), np.uint8)
-rgb_color = (0,0,0)
-dump_image[:] = rgb_color
-
-LSD = cv2.createLineSegmentDetector(0)
-lines, width, prec, nfa = LSD.detect(img)
-img2 = LSD.drawSegments(imgColor, lines)
-
-LSD2 = cv2.createLineSegmentDetector(0)
-lines2, width2, prec2, nfa2 = LSD.detect(img)
-img3 = LSD.drawSegments(imgColor, lines2)
+	printMatrToFile(filename, dumpMatrix)
 
 
-for ind1 in range(0, 256):
-	for ind2 in range(0, 256):
-		avg = (int(img2[ind1, ind2][0]) + int(img2[ind1, ind2][0]) + int(img2[ind1, ind2][0]))
-
-		if img2[ind1, ind2][1] != 255:
-			dump_image[ind1, ind2][0] = dump_image[ind1, ind2][0] + 1 
-
-		if img3[ind1, ind2][1] != 255:
-			dump_image[ind1,ind2][0] = dump_image[ind1, ind2][0] + 1
+test()
+#completeTest("card.png", "card.txt")
 
 
-total = 0
-#print in dump
-for ind1 in range(0, 256):
-	for ind2 in range(0, 256):
-		if dump_image[ind1, ind2][0] != 0:
-			total = total + 1
-
-print("total = ", total)
-
-
-
-
-
-cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-cv2.imshow('image',img2)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-'''
 
