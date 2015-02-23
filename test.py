@@ -1,11 +1,20 @@
 import cv2
 import numpy as np
 
+#
+# Convert color image to grayscale
+#
 def originalImageToGrayscale(name):
 	imgColor = cv2.imread(name)
 	imgGrayScale = cv2.imread(name, cv2.IMREAD_GRAYSCALE)
 
 	return imgColor, imgGrayScale
+
+def imageResize(imageName, fx, fy):
+	img = cv2.imread(imageName)
+	small = cv2.resize(img, (0,0), fx = fx, fy = fy)
+
+	return small
 
 
 def imageToIntencityMatr(img):
@@ -100,6 +109,21 @@ def printImageLinesWithTreshold(dump, treshold):
 	cv2.destroyAllWindows()
 
 
+def printImageFromDump(dump, baseImage):
+
+	height, width = dump.shape
+
+	print("dump size = {}", dump.shape)
+	print("baseImage size - {}", baseImage.shape)
+
+	for i in range(0, height):
+		for j in range(0, width):
+			if dump[i,j] != 0:
+				baseImage[i,j] = baseImage[i,j] - 30 * dump[i,j]
+
+	return baseImage
+
+
 def getAvailableTresholds(dump):
 	height, width = dump.shape
 	tresholds = []
@@ -146,6 +170,12 @@ def tokenizer(filename):
 
 
 
+#TODO: imageNormalization
+def imageNormalize(image, nMin, nMax):
+	normalizedImage = cv2.normalize(image, image, nMin, nMax, cv2.NORM_MINMAX, cv2.CV_8UC1)
+	return normalizedImage
+
+
 def test():
 
 	'''
@@ -166,6 +196,7 @@ def test():
 #600 - 400
 
 def completeTest(imageName, filename):
+	
 	imColor, imgGrayScale = originalImageToGrayscale(imageName)
 	height, width = imgGrayScale.shape
 	dumpMatrix = np.zeros(shape = (height, width))
@@ -187,8 +218,29 @@ def completeTest(imageName, filename):
 	printMatrToFile(filename, dumpMatrix)
 
 
-test()
-#completeTest("tests/IMG_2124.JPG", "tests/IMG_2124.txt")
+#test()
+#completeTest("tests/small_03_2124.JPG", "tests/data/small_03_2124.txt")
+#img, matr = imageNormalize("tests/IMG_2124.JPG", 200, 255)
+#smallImageGrayScale = imageResize("tests/IMG_2124.JPG", 0.3, 0.3)
+#cv2.imwrite("tests/small_03_2124.JPG", smallImageGrayScale)
+
+#main
+
+
+color, grayscale = originalImageToGrayscale("tests/small_03_2124.JPG")
+w, h = grayscale.shape
+matr = getMatrFromTextFile("tests/data/small_03_2124.txt",w, h)
+normalized = imageNormalize(grayscale, 200, 255)
+withLayout = printImageFromDump(matr, normalized)
+
+
+cv2.namedWindow('image', cv2.WINDOW_AUTOSIZE)
+cv2.resizeWindow('image',200,200)
+cv2.imshow('image', withLayout)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
 
 
 
