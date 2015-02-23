@@ -109,7 +109,7 @@ def printImageLinesWithTreshold(dump, treshold):
 	cv2.destroyAllWindows()
 
 
-def printImageFromDump(dump, baseImage):
+def printImageFromDump(dump, baseImage, k):
 
 	height, width = dump.shape
 
@@ -119,7 +119,7 @@ def printImageFromDump(dump, baseImage):
 	for i in range(0, height):
 		for j in range(0, width):
 			if dump[i,j] != 0:
-				baseImage[i,j] = baseImage[i,j] - 30 * dump[i,j]
+				baseImage[i,j] = baseImage[i,j] - k * dump[i,j]
 
 	return baseImage
 
@@ -203,7 +203,7 @@ def completeTest(imageName, filename):
 
 	#params = refine, scale, sigma_scale, quant, ang_th, log_eps, density_th, n_bins
 	counter = 0
-	for scale in np.arange(0.6, 0.8, 0.1):
+	for scale in np.arange(0.5, 1.0, 0.1):
 		for sigma_scale in np.arange(0.6, 0.7, 0.1):
 			for quant in np.arange(1.0, 2.0, 1.0):
 				for ang_th in np.arange(22, 24, 1.0):
@@ -218,27 +218,47 @@ def completeTest(imageName, filename):
 	printMatrToFile(filename, dumpMatrix)
 
 
-#test()
-#completeTest("tests/small_03_2124.JPG", "tests/data/small_03_2124.txt")
-#img, matr = imageNormalize("tests/IMG_2124.JPG", 200, 255)
-#smallImageGrayScale = imageResize("tests/IMG_2124.JPG", 0.3, 0.3)
-#cv2.imwrite("tests/small_03_2124.JPG", smallImageGrayScale)
+def completeTestHoughLines(imageName, fileName):
 
-#main
+	imColor, imGrayScale = originalImageToGrayscale(imageName)
+	height, width = imGrayScale.shape
+	dumpMatrix = np.zeros(shape = (height, width))
+
+	counter = 0
+	angles = [np.pi/180, np.pi/140, np.pi/120, np.pi/100, np.pi/90];
+	for rho in np.arange(0.5, 1.0, 0.1):
+		for theta in angles:
+			for threshold in np.arange(40, 100, 20):
+				lines = cv2.HoughLinesP(image = imGrayScale, rho = rho, theta = theta, threshold = threshold)
+				dumpMatrix = layoutToDump(dumpMatrix, lines)
+				counter = counter + 1
+				print("test = {}", counter)
+
+	printMatrToFile(fileName, dumpMatrix)
 
 
-color, grayscale = originalImageToGrayscale("tests/small_03_2124.JPG")
-w, h = grayscale.shape
-matr = getMatrFromTextFile("tests/data/small_03_2124.txt",w, h)
-normalized = imageNormalize(grayscale, 200, 255)
-withLayout = printImageFromDump(matr, normalized)
+#resize image
+#smallImageGrayScale = imageResize("tests/IMG_2156.JPG", 0.3, 0.3)
+#cv2.imwrite("tests/small/k_2156.JPG", smallImageGrayScale)
+
+#run test
+#completeTest("tests/small/sm_03_2156.JPG", "tests/data/small_03_2156.txt")
+#completeTestHoughLines("tests/small/k_2156.JPG", "tests/data/small_hough_2156.txt")
 
 
-cv2.namedWindow('image', cv2.WINDOW_AUTOSIZE)
-cv2.resizeWindow('image',200,200)
-cv2.imshow('image', withLayout)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+#print image with layout
+# color, grayscale = originalImageToGrayscale("tests/small/k_2156.JPG")
+# w, h = grayscale.shape
+# matr = getMatrFromTextFile("tests/data/small_hough_2156.txt",w, h)
+# normalized = imageNormalize(grayscale, 200, 255)
+# withLayout = printImageFromDump(matr, normalized, 3)
+
+
+# cv2.namedWindow('image', cv2.WINDOW_AUTOSIZE)
+# cv2.resizeWindow('image',200,200)
+# cv2.imshow('image', withLayout)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 
 
 
